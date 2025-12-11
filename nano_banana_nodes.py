@@ -71,7 +71,7 @@ class GrsaiNanoBanana_Node:
                     },
                 ),
                 "model": (
-                    ["nano-banana", "nano-banana-fast"],
+                    ["nano-banana-fast", "nano-banana", "nano-banana-pro"],
                     {"default": "nano-banana-fast"},
                 ),
             },
@@ -80,6 +80,11 @@ class GrsaiNanoBanana_Node:
                 "aspect_ratio": (
                     default_config.SUPPORTED_NANO_BANANA_AR,
                     {"default": "auto"},
+                ),
+                "use_image_size": ("BOOLEAN", {"default": False}),
+                "image_size": (
+                    default_config.SUPPORTED_NANO_BANANA_IMAGE_SIZES,
+                    {"default": "1K"},
                 ),
                 "image_1": ("IMAGE",),
                 "image_2": ("IMAGE",),
@@ -124,6 +129,19 @@ class GrsaiNanoBanana_Node:
             aspect_ratio = None
         elif aspect_ratio is None:
             aspect_ratio = "auto"
+
+        use_image_size = kwargs.pop("use_image_size", False)
+        image_size = kwargs.pop("image_size", None)
+        if not use_image_size:
+            image_size = None
+        elif image_size is None:
+            image_size = "1K"
+
+        # 验证imageSize参数只能用于nano-banana-pro模型
+        if use_image_size and model != "nano-banana-pro":
+            return self._create_error_result(
+                f"imageSize参数仅支持nano-banana-pro模型，当前模型: {model}"
+            )
 
         # 收集可选输入图像
         images_in: List[torch.Tensor] = [
@@ -180,6 +198,7 @@ class GrsaiNanoBanana_Node:
                     model=model,
                     urls=uploaded_urls,
                     aspect_ratio=aspect_ratio,
+                    image_size=image_size,
                 )
         except Exception as e:
             return self._create_error_result(
